@@ -2,6 +2,7 @@ var resultJSON;
 const imageLink = 'https://cdn2.iconfinder.com/data/icons/media-and-navigation-buttons-square/512/Button_2-512.png';
 var localWikiList = [];
 var wikiDisplayList = [];
+var numberOfFinishedObjects = 0;
 const formattedErrorMessageAsAList = [{
   toDisplayHTML: function() {
     return `<li>
@@ -79,7 +80,6 @@ function startSearch(keyWord) {
 
     })
     .done(function() {
-
       //console.log("ready " + JSON.stringify(localWikiList[0]));
       if (localWikiList.length === 0) {
         listDisplayUpdater(formattedErrorMessageAsAList);
@@ -96,13 +96,13 @@ function startSearch(keyWord) {
 
 function localWikiDataAdder(localListToBeAddedTo) {
   console.log("localWikiDataAdder started");
-  for (var i = 0; i < localListToBeAddedTo.length;) {
+  numberOfFinishedObjects = 0;
+  for (let i = 0; i < localListToBeAddedTo.length;) {
     let localListItem = localListToBeAddedTo[i];
     let queryURL = `https://en.wikipedia.org/w/api.php?action=query&format=json&prop=info%7Cdescription%7Cpageimages&titles=${localListItem.articleTitle}&pithumbsize=200&callback=?`;
 
     $.getJSON(queryURL, function(wikiQueryJSON) {
         console.log("query sent ", JSON.stringify(wikiQueryJSON));
-
       })
       .done(function(wikiQueryJSON) {
         let tempInfoObject = wikiQueryJSON.query.pages;
@@ -117,9 +117,11 @@ function localWikiDataAdder(localListToBeAddedTo) {
 
         //console.log("localListItem: " + JSON.stringify(localListItem));
         wikiDisplayList.push(localListItem);
-        console.log(wikiDisplayList);
+        numberOfFinishedObjects++;
+        //console.log(wikiDisplayList);
 
-        if (i == 10) {
+        if (numberOfFinishedObjects == localListToBeAddedTo.length) {
+          //console.log("toDisplay!");
           listDisplayUpdater(wikiDisplayList);
         }
       })
@@ -135,6 +137,17 @@ function listDisplayUpdater(listToBeDisplayed) {
   console.log(listToBeDisplayed);
   $("#forTheList").empty();
   $("#firstText").append("<ul>");
+  listToBeDisplayed.sort(function(a, b) {
+    let x = a.articleTitle.toLowerCase();
+    let y = b.articleTitle.toLowerCase();
+    if (x < y) {
+      return -1;
+    }
+    if (x > y) {
+      return 1;
+    }
+    return 0;
+  });
   for (wikiDisplayitem of listToBeDisplayed) {
     $("#forTheList").append(wikiDisplayitem.toDisplayHTML());
   }
